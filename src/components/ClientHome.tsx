@@ -73,10 +73,32 @@ export default function ClientHome() {
     // =====================
     // Preload all frames
     // =====================
+    // Frame skipping: Load every Nth frame for heavy 2K sequences
+    // This halves the download without touching image quality
+    const SKIP_STEP = 2; // Load every 2nd frame for seq 2-5
+
+    // Actual frames to load (after skipping)
+    const LOAD_TPS = Math.ceil(FRAMES_TPS / SKIP_STEP);
+    const LOAD_SEQ3 = Math.ceil(FRAMES_SEQ3 / SKIP_STEP);
+    const LOAD_SEQ4 = Math.ceil(FRAMES_SEQ4 / SKIP_STEP);
+    const LOAD_SEQ5 = Math.ceil(FRAMES_SEQ5 / SKIP_STEP);
+
+    // Overwrite state arrays with reduced sizes
+    state.imagesTPS = new Array(LOAD_TPS);
+    state.imagesSeq3 = new Array(LOAD_SEQ3);
+    state.imagesSeq4 = new Array(LOAD_SEQ4);
+    state.imagesSeq5 = new Array(LOAD_SEQ5);
+
+    // Update scrollConfigs to use the reduced frame arrays
+    scrollConfigs[1].frames = state.imagesTPS;
+    scrollConfigs[2].frames = state.imagesSeq3;
+    scrollConfigs[3].frames = state.imagesSeq4;
+    scrollConfigs[4].frames = state.imagesSeq5;
+
     function preloadImages() {
         const preloader = document.getElementById('preloader');
         const percentEl = document.getElementById('preloaderPercent');
-        const QUICK_LOAD = 100; // Only block preloader for first 100 Mimaki frames
+        const QUICK_LOAD = 100;
 
         return new Promise((resolve) => {
             let mimakiLoaded = 0;
@@ -87,7 +109,6 @@ export default function ClientHome() {
                 const percent = Math.min(100, Math.round((mimakiLoaded / QUICK_LOAD) * 100));
                 if (percentEl) percentEl.textContent = `${percent}%`;
 
-                // Dismiss preloader after first 100 frames — near instant
                 if (mimakiLoaded >= QUICK_LOAD && !dismissed) {
                     dismissed = true;
                     state.isReady = true;
@@ -98,10 +119,7 @@ export default function ClientHome() {
                 }
             };
 
-            // Load ALL sequences IN PARALLEL from the very start
-            // This way they all download simultaneously
-            
-            // Sequence 1: Mimaki (tracks progress for preloader)
+            // Sequence 1: Mimaki — load ALL frames (they're small, ~200KB each)
             for (let i = 1; i <= FRAMES_MIMAKI; i++) {
                 const img = new Image();
                 img.src = `${PATH_MIMAKI}${padFrame(i)}${FRAME_EXT}`;
@@ -110,19 +128,21 @@ export default function ClientHome() {
                 state.images[i - 1] = img;
             }
 
-            // Sequences 2-5: Start loading immediately (no waiting)
-            const loadSilent = (count, path, arr) => {
-                for (let i = 1; i <= count; i++) {
+            // Sequences 2-5: Load every 2nd frame (they're heavy, ~1MB each)
+            const loadSkipped = (totalFrames, path, arr) => {
+                let idx = 0;
+                for (let i = 1; i <= totalFrames; i += SKIP_STEP) {
                     const img = new Image();
                     img.src = `${path}${padFrame(i)}${FRAME_EXT}`;
-                    arr[i - 1] = img;
+                    arr[idx] = img;
+                    idx++;
                 }
             };
 
-            loadSilent(FRAMES_TPS, PATH_TPS, state.imagesTPS);
-            loadSilent(FRAMES_SEQ3, PATH_SEQ3, state.imagesSeq3);
-            loadSilent(FRAMES_SEQ4, PATH_SEQ4, state.imagesSeq4);
-            loadSilent(FRAMES_SEQ5, PATH_SEQ5, state.imagesSeq5);
+            loadSkipped(FRAMES_TPS, PATH_TPS, state.imagesTPS);
+            loadSkipped(FRAMES_SEQ3, PATH_SEQ3, state.imagesSeq3);
+            loadSkipped(FRAMES_SEQ4, PATH_SEQ4, state.imagesSeq4);
+            loadSkipped(FRAMES_SEQ5, PATH_SEQ5, state.imagesSeq5);
         });
     }
 
