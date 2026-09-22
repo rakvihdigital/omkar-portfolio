@@ -76,40 +76,57 @@ export default function ClientHome() {
     function preloadImages() {
         const preloader = document.getElementById('preloader');
         const percentEl = document.getElementById('preloaderPercent');
-        const totalFrames = FRAMES_MIMAKI + FRAMES_TPS + FRAMES_SEQ3 + FRAMES_SEQ4 + FRAMES_SEQ5;
+        const QUICK_LOAD = 100; // Only wait for first 100 frames (~1-2 sec)
+
+        // Helper to load a single sequence into its array
+        const loadArray = (count, path, arr) => {
+            return new Promise((resolve) => {
+                let loaded = 0;
+                for (let i = 1; i <= count; i++) {
+                    const img = new Image();
+                    img.src = `${path}${padFrame(i)}${FRAME_EXT}`;
+                    img.onload = () => { loaded++; if (loaded === count) resolve(); };
+                    img.onerror = () => { loaded++; if (loaded === count) resolve(); };
+                    arr[i - 1] = img;
+                }
+            });
+        };
 
         return new Promise((resolve) => {
             let loaded = 0;
+            let dismissed = false;
 
             const checkProgress = () => {
                 loaded++;
-                const percent = Math.round((loaded / totalFrames) * 100);
+                const percent = Math.min(100, Math.round((loaded / QUICK_LOAD) * 100));
                 if (percentEl) percentEl.textContent = `${percent}%`;
 
-                if (loaded === totalFrames) {
+                // Dismiss preloader after first 100 frames — near instant
+                if (loaded >= QUICK_LOAD && !dismissed) {
+                    dismissed = true;
                     state.isReady = true;
                     setTimeout(() => {
                         preloader.classList.add('loaded');
                         resolve();
-                    }, 400);
+                    }, 300);
                 }
             };
 
-            const loadArray = (count, path, arr) => {
-                for (let i = 1; i <= count; i++) {
-                    const img = new Image();
-                    img.src = `${path}${padFrame(i)}${FRAME_EXT}`;
-                    img.onload = checkProgress;
-                    img.onerror = checkProgress;
-                    arr[i - 1] = img;
-                }
-            };
+            // Start loading ALL Mimaki frames (but only wait for first 100)
+            for (let i = 1; i <= FRAMES_MIMAKI; i++) {
+                const img = new Image();
+                img.src = `${PATH_MIMAKI}${padFrame(i)}${FRAME_EXT}`;
+                img.onload = checkProgress;
+                img.onerror = checkProgress;
+                state.images[i - 1] = img;
+            }
 
-            loadArray(FRAMES_MIMAKI, PATH_MIMAKI, state.images);
-            loadArray(FRAMES_TPS, PATH_TPS, state.imagesTPS);
-            loadArray(FRAMES_SEQ3, PATH_SEQ3, state.imagesSeq3);
-            loadArray(FRAMES_SEQ4, PATH_SEQ4, state.imagesSeq4);
-            loadArray(FRAMES_SEQ5, PATH_SEQ5, state.imagesSeq5);
+            // Load remaining sequences in background (don't block preloader)
+            loadArray(FRAMES_TPS, PATH_TPS, state.imagesTPS)
+                .then(() => loadArray(FRAMES_SEQ3, PATH_SEQ3, state.imagesSeq3))
+                .then(() => loadArray(FRAMES_SEQ4, PATH_SEQ4, state.imagesSeq4))
+                .then(() => loadArray(FRAMES_SEQ5, PATH_SEQ5, state.imagesSeq5))
+                .then(() => console.log('✅ All sequences loaded'));
         });
     }
 
