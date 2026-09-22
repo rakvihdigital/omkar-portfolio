@@ -76,33 +76,19 @@ export default function ClientHome() {
     function preloadImages() {
         const preloader = document.getElementById('preloader');
         const percentEl = document.getElementById('preloaderPercent');
-        const QUICK_LOAD = 100; // Only wait for first 100 frames (~1-2 sec)
-
-        // Helper to load a single sequence into its array
-        const loadArray = (count, path, arr) => {
-            return new Promise((resolve) => {
-                let loaded = 0;
-                for (let i = 1; i <= count; i++) {
-                    const img = new Image();
-                    img.src = `${path}${padFrame(i)}${FRAME_EXT}`;
-                    img.onload = () => { loaded++; if (loaded === count) resolve(); };
-                    img.onerror = () => { loaded++; if (loaded === count) resolve(); };
-                    arr[i - 1] = img;
-                }
-            });
-        };
+        const QUICK_LOAD = 100; // Only block preloader for first 100 Mimaki frames
 
         return new Promise((resolve) => {
-            let loaded = 0;
+            let mimakiLoaded = 0;
             let dismissed = false;
 
-            const checkProgress = () => {
-                loaded++;
-                const percent = Math.min(100, Math.round((loaded / QUICK_LOAD) * 100));
+            const checkMimakiProgress = () => {
+                mimakiLoaded++;
+                const percent = Math.min(100, Math.round((mimakiLoaded / QUICK_LOAD) * 100));
                 if (percentEl) percentEl.textContent = `${percent}%`;
 
                 // Dismiss preloader after first 100 frames — near instant
-                if (loaded >= QUICK_LOAD && !dismissed) {
+                if (mimakiLoaded >= QUICK_LOAD && !dismissed) {
                     dismissed = true;
                     state.isReady = true;
                     setTimeout(() => {
@@ -112,21 +98,31 @@ export default function ClientHome() {
                 }
             };
 
-            // Start loading ALL Mimaki frames (but only wait for first 100)
+            // Load ALL sequences IN PARALLEL from the very start
+            // This way they all download simultaneously
+            
+            // Sequence 1: Mimaki (tracks progress for preloader)
             for (let i = 1; i <= FRAMES_MIMAKI; i++) {
                 const img = new Image();
                 img.src = `${PATH_MIMAKI}${padFrame(i)}${FRAME_EXT}`;
-                img.onload = checkProgress;
-                img.onerror = checkProgress;
+                img.onload = checkMimakiProgress;
+                img.onerror = checkMimakiProgress;
                 state.images[i - 1] = img;
             }
 
-            // Load remaining sequences in background (don't block preloader)
-            loadArray(FRAMES_TPS, PATH_TPS, state.imagesTPS)
-                .then(() => loadArray(FRAMES_SEQ3, PATH_SEQ3, state.imagesSeq3))
-                .then(() => loadArray(FRAMES_SEQ4, PATH_SEQ4, state.imagesSeq4))
-                .then(() => loadArray(FRAMES_SEQ5, PATH_SEQ5, state.imagesSeq5))
-                .then(() => console.log('✅ All sequences loaded'));
+            // Sequences 2-5: Start loading immediately (no waiting)
+            const loadSilent = (count, path, arr) => {
+                for (let i = 1; i <= count; i++) {
+                    const img = new Image();
+                    img.src = `${path}${padFrame(i)}${FRAME_EXT}`;
+                    arr[i - 1] = img;
+                }
+            };
+
+            loadSilent(FRAMES_TPS, PATH_TPS, state.imagesTPS);
+            loadSilent(FRAMES_SEQ3, PATH_SEQ3, state.imagesSeq3);
+            loadSilent(FRAMES_SEQ4, PATH_SEQ4, state.imagesSeq4);
+            loadSilent(FRAMES_SEQ5, PATH_SEQ5, state.imagesSeq5);
         });
     }
 
