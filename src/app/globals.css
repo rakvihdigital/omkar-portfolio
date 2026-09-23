@@ -171,10 +171,16 @@ a {
     gap: 4px;
     transition: opacity var(--transition-fast);
     text-decoration: none;
+    transform-origin: top left;
+    
+    /* Base for Glassmorphism (animated via JS) */
+    padding: 12px 24px;
+    border-radius: 16px;
+    border: 1px solid transparent;
 }
 
 .nav-logo:hover {
-    opacity: 0.75;
+    opacity: 0.9;
 }
 
 .logo-img {
@@ -551,6 +557,8 @@ a {
     .nav-logo {
         top: 16px;
         left: 16px;
+        padding: 8px 16px;
+        border-radius: 12px;
     }
 
     .logo-img {
@@ -1300,7 +1308,7 @@ a {
 @media (max-width: 768px) {
 
     .puzzle-heading {
-        top: 5%;
+        top: 15vh;
         left: 5%;
         width: 90%;
         text-align: center;
@@ -1774,33 +1782,36 @@ a {
 @media (max-width: 768px) {
     .iso-certificates-container {
         flex-direction: row;
-        gap: 10px;
-        top: 60%;
-        width: 96%;
+        top: 55%;
+        width: 95%;
+        justify-content: center;
+        align-items: center;
+        gap: 2vw;
     }
 
     .iso-cert {
-        width: 28vw;
-        height: 39vw;
-        margin-top: 0;
+        width: 29vw;
+        height: 41vw;
+        margin: 0;
+        position: relative;
+        z-index: 1;
     }
 
     .iso-cert-center {
-        width: 34vw;
-        height: 47vw;
-        margin-top: 0;
+        width: 29vw;
+        height: 41vw;
+        margin: 0;
+        position: relative;
+        z-index: 1;
     }
 
     .iso-header {
-        margin-top: 12vh;
+        margin-top: 16vh;
         gap: 10px;
+        z-index: 10;
     }
 
     .iso-header h2 {
-        font-size: 2rem;
-    }
-
-    .iso-certificates-container {
-        top: 52%;
+        font-size: 1.8rem;
     }
 }
