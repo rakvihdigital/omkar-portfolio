@@ -142,49 +142,14 @@ export default function MimakiSequence() {
         };
 
         const onScroll = () => {
-            const introSection = document.getElementById('intro-section');
-            const introSticky = introSection?.querySelector('.intro-sticky') as HTMLElement;
             const navLogo = document.getElementById('navLogo');
-            if (introSection && introSticky && navLogo) {
-                const rect = introSection.getBoundingClientRect();
-                const sectionHeight = introSection.offsetHeight - window.innerHeight;
-                const scrolled = -rect.top;
-                let progress = 0;
-                if (sectionHeight > 0) {
-                    progress = Math.max(0, Math.min(1, scrolled / sectionHeight));
-                }
-                let introOpacity = 1 - progress;
-                introSticky.style.opacity = Math.max(0, Math.min(1, introOpacity)).toString();
-                introSticky.style.pointerEvents = introOpacity > 0 ? 'auto' : 'none';
-                
-                const isMobile = window.innerWidth < 768;
-                const maxScale = isMobile ? 1.8 : 3.5;
-                const currentScale = 1 + ((maxScale - 1) * (1 - progress));
-                
-                const img = navLogo.querySelector('.logo-img') as HTMLElement;
-                const desc = navLogo.querySelector('.logo-desc') as HTMLElement;
-                const baseImgHeight = isMobile ? 32 : 40;
-                if (img) img.style.height = `${baseImgHeight * currentScale}px`;
-                if (desc) desc.style.fontSize = `${0.65 * currentScale}rem`;
-                
-                const currentWidth = navLogo.offsetWidth || 150;
-                const currentHeight = navLogo.offsetHeight || 40;
-                const targetX = isMobile ? 16 : 28;
-                const targetY = isMobile ? 16 : 24;
-                const centerX = window.innerWidth / 2;
-                const centerY = window.innerHeight / 2;
-                const startLeft = centerX - currentWidth / 2;
-                const startTop = centerY - currentHeight / 2;
-                const currentTranslateX = (startLeft - targetX) * (1 - progress);
-                const currentTranslateY = (startTop - targetY) * (1 - progress);
-                navLogo.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px)`;
-                
-                // Fade in glassmorphism as it reaches the corner
-                navLogo.style.backgroundColor = `rgba(25, 25, 30, ${0.4 * progress})`;
-                navLogo.style.borderColor = `rgba(255, 255, 255, ${0.1 * progress})`;
-                navLogo.style.boxShadow = `0 8px 32px rgba(0, 0, 0, ${0.3 * progress})`;
-                navLogo.style.backdropFilter = `blur(${12 * progress}px)`;
-                navLogo.style.setProperty('-webkit-backdrop-filter', `blur(${12 * progress}px)`);
+            if (navLogo) {
+                // Apply a simple static style if desired, or keep it purely CSS driven
+                navLogo.style.backgroundColor = `rgba(25, 25, 30, 0.4)`;
+                navLogo.style.borderColor = `rgba(255, 255, 255, 0.1)`;
+                navLogo.style.boxShadow = `0 8px 32px rgba(0, 0, 0, 0.3)`;
+                navLogo.style.backdropFilter = `blur(12px)`;
+                navLogo.style.setProperty('-webkit-backdrop-filter', `blur(12px)`);
             }
 
             if (!sectionRef.current) return;
@@ -271,12 +236,6 @@ export default function MimakiSequence() {
                 <img src="/assets/logo.png" alt="Omkar Enterprises Logo" className="logo-img" />
                 <span className="logo-desc">Our Professional<br />Portfolio</span>
             </a>
-
-            {/*  Intro Section — Logo fades out on initial scroll  */}
-            <div id="intro-section" className="scroll-section" style={{ height: "150vh", zIndex: 50 }}>
-                <div className="sticky-wrapper intro-sticky">
-                </div>
-            </div>
 
             <div className="scroll-section" id="section-1" ref={sectionRef} style={{ height: "1000vh" }}>
                 <div className="sticky-wrapper">
